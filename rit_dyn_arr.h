@@ -169,4 +169,12 @@ inline void shrink_to_fit(void *t_rit_dyn_arr) { (void)t_rit_dyn_arr; }
   }                                                                            \
   rit_dyn_arr_pop_back(t_rit_dyn_arr)
 
+/// @brief Iterate over an array
+/// @param t_it The iterating pointer
+/// @param t_rit_dyn_arr The array
+#define rit_dyn_arr_for_each(t_it, t_rit_dyn_arr)    \
+  for (typeof(rit_dyn_arr_begin(t_rit_dyn_arr)) it = \
+           rit_dyn_arr_begin(t_rit_dyn_arr);         \
+       it < rit_dyn_arr_end(t_rit_dyn_arr); it++)
+
 #endif  // RIT_DYN_ARR_H_INCLUDED
