@@ -45,6 +45,10 @@ inline void *rit_dyn_arr_alloc(size_t t_objsize, size_t t_size,
   return (void *)arr;
 }
 
+inline void rit_dyn_arr_free(void *t_rit_dyn_arr, rit_dyn_arr_allocator *t_allocator) {
+  t_allocator->free(t_allocator->m_ctx, t_rit_dyn_arr);
+}
+
 inline size_t rit_dyn_arr_size(void *t_rit_dyn_arr) {
   return rit_dyn_arr_get_metadata(t_rit_dyn_arr)->m_size;
 }
