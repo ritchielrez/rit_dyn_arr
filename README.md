@@ -72,7 +72,6 @@ avalaible in C, there is no context. So, we are not doing anything with `t_ctx`
 and also initialzing `m_ctx` as NULL.
  
 ### How to use this library
-
 Just copy and past the file `rit_dyn_arr.h` in your project and include it. 
 Nothing else is needed to be done.
 
