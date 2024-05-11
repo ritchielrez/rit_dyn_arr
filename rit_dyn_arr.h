@@ -138,6 +138,8 @@ inline void shrink_to_fit(void *t_rit_dyn_arr) { (void)t_rit_dyn_arr; }
     t_rit_dyn_arr[t_index] = t_value;                                   \
   }
 
+/// @param t_rit_dyn_arr Where to copy
+/// @param t_rit_dyn_arr_other What to copy
 #define rit_dyn_arr_copy(t_rit_dyn_arr, t_rit_dyn_arr_other, t_allocator) \
   rit_dyn_arr_reserve(t_rit_dyn_arr_other,                                \
                       rit_dyn_arr_capacity(t_rit_dyn_arr), t_allocator); \
