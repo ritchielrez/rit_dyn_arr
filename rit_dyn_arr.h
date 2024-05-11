@@ -110,11 +110,12 @@ inline void rit_dyn_arr_clear(void *t_rit_dyn_arr) {
   rit_dyn_arr_get_metadata(t_rit_dyn_arr)->m_size = 0;
 }
 
-inline void rit_dyn_arr_swap(void **t_rit_dyn_arr, void **t_rit_dyn_arr_other) {
-  void *tmp = *t_rit_dyn_arr;
-  *t_rit_dyn_arr = *t_rit_dyn_arr_other;
-  *t_rit_dyn_arr_other = tmp;
-}
+#define rit_dyn_arr_swap(t_rit_dyn_arr, t_rit_dyn_arr_other) \
+  do {                                                       \
+    void *tmp = t_rit_dyn_arr;                               \
+    t_rit_dyn_arr = t_rit_dyn_arr_other;                     \
+    t_rit_dyn_arr_other = tmp;                               \
+  } while (0)
 
 /// @brief Makes a non-binding request to make the capacity of an array equal to
 /// its size. In this library this is definied as a no-op function.
