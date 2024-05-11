@@ -41,8 +41,8 @@ inline void *rit_dyn_arr_alloc(const char *t_file, int t_line, size_t t_objsize,
   rit_dyn_arr_metadata *arr = (rit_dyn_arr_metadata *)t_allocator->alloc(
       t_allocator->m_ctx,
       sizeof(rit_dyn_arr_metadata) + t_objsize * t_size * 2);
-  if(arr) {
-    fprintf(stderr, "Allocation failed, file: %s, line: %d\n", t_file, t_line);
+  if(!arr) {
+    fprintf(stderr, "Error: allocation failed, file: %s, line: %d\n", t_file, t_line);
     exit(EXIT_FAILURE);
   }
   arr->m_size = t_size;
@@ -81,10 +81,10 @@ inline void rit_dyn_arr_reserve(void **t_rit_dyn_arr, size_t t_new_capacity,
   }
 }
 
-inline bool rit_dyn_arr_index_bounds_check(void *t_rit_dyn_arr,
+inline bool rit_dyn_arr_index_bounds_check(const char*t_file, int t_line,void *t_rit_dyn_arr,
                                            size_t t_index) {
   if (t_index < rit_dyn_arr_size(t_rit_dyn_arr)) return true;
-  fprintf(stderr, "Error: array index is out of bounds\n");
+  fprintf(stderr, "Error: array index is out of bounds, file: %s, line: %d\n", t_file, t_line);
   exit(EXIT_FAILURE);
 }
 
@@ -115,12 +115,12 @@ inline void shrink_to_fit(void *t_rit_dyn_arr) { (void)t_rit_dyn_arr; }
       __FILE__, __LINE__, sizeof(t_type), t_size, t_allocator)
 
 #define rit_dyn_arr_at(t_rit_dyn_arr, t_index)             \
-  (rit_dyn_arr_index_bounds_check(t_rit_dyn_arr, t_index)) \
+  (rit_dyn_arr_index_bounds_check(__FILE__, __LINE__, t_rit_dyn_arr, t_index)) \
       ? t_rit_dyn_arr[t_index]                             \
       : t_rit_dyn_arr[t_index]
 
 #define rit_dyn_arr_set(t_rit_dyn_arr, t_index, t_value)        \
-  if (rit_dyn_arr_index_bounds_check(t_rit_dyn_arr, t_index)) { \
+  if (rit_dyn_arr_index_bounds_check(__FILE__, __LINE__, t_rit_dyn_arr, t_index)) { \
     t_rit_dyn_arr[t_index] = t_value;                           \
   }
 
