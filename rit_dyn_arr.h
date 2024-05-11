@@ -36,11 +36,15 @@ typedef struct {
 /// @param t_allocator Custom allocator for the function to use
 /// @param t_objsize sizeof(obj)
 /// @param t_size The number of elements of the array
-inline void *rit_dyn_arr_alloc(size_t t_objsize, size_t t_size,
+inline void *rit_dyn_arr_alloc(const char *t_file, int t_line, size_t t_objsize, size_t t_size,
                                rit_dyn_arr_allocator *t_allocator) {
   rit_dyn_arr_metadata *arr = (rit_dyn_arr_metadata *)t_allocator->alloc(
       t_allocator->m_ctx,
       sizeof(rit_dyn_arr_metadata) + t_objsize * t_size * 2);
+  if(arr) {
+    fprintf(stderr, "Allocation failed, file: %s, line: %d\n", t_file, t_line);
+    exit(EXIT_FAILURE);
+  }
   arr->m_size = t_size;
   arr->m_objsize = t_objsize;
   arr->m_capacity = t_size * 2;
@@ -48,7 +52,8 @@ inline void *rit_dyn_arr_alloc(size_t t_objsize, size_t t_size,
   return (void *)arr;
 }
 
-inline void rit_dyn_arr_free(void *t_rit_dyn_arr, rit_dyn_arr_allocator *t_allocator) {
+inline void rit_dyn_arr_free(void *t_rit_dyn_arr,
+                             rit_dyn_arr_allocator *t_allocator) {
   t_allocator->free(t_allocator->m_ctx, t_rit_dyn_arr);
 }
 
@@ -106,8 +111,8 @@ inline void shrink_to_fit(void *t_rit_dyn_arr) { (void)t_rit_dyn_arr; }
 /// @brief Allocate a rit_dyn_arr.
 /// Internally this macro calls rit_dyn_alloc().
 #define rit_dyn_arr(t_type, t_rit_dyn_arr, t_size, t_allocator) \
-  t_type *t_rit_dyn_arr =                                       \
-      (t_type *)rit_dyn_arr_alloc(sizeof(t_type), t_size, t_allocator)
+  t_type *t_rit_dyn_arr = (t_type *)rit_dyn_arr_alloc(          \
+      __FILE__, __LINE__, sizeof(t_type), t_size, t_allocator)
 
 #define rit_dyn_arr_at(t_rit_dyn_arr, t_index)             \
   (rit_dyn_arr_index_bounds_check(t_rit_dyn_arr, t_index)) \
