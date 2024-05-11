@@ -32,17 +32,16 @@ typedef struct {
 #define rit_dyn_arr_get_metadata(t_rit_dyn_arr) \
   (&((rit_dyn_arr_metadata *)t_rit_dyn_arr)[-1])
 
-/// @brief Allocate the array and the metadata header.
-/// @param t_allocator Custom allocator for the function to use
-/// @param t_objsize sizeof(obj)
-/// @param t_size The number of elements of the array
-inline void *rit_dyn_arr_alloc(const char *t_file, int t_line, size_t t_objsize, size_t t_size,
+/// @internal
+inline void *rit_dyn_arr_alloc(const char *t_file, int t_line, size_t t_objsize,
+                               size_t t_size,
                                rit_dyn_arr_allocator *t_allocator) {
   rit_dyn_arr_metadata *arr = (rit_dyn_arr_metadata *)t_allocator->alloc(
       t_allocator->m_ctx,
       sizeof(rit_dyn_arr_metadata) + t_objsize * t_size * 2);
-  if(!arr) {
-    fprintf(stderr, "Error: allocation failed, file: %s, line: %d\n", t_file, t_line);
+  if (!arr) {
+    fprintf(stderr, "Error: allocation failed, file: %s, line: %d\n", t_file,
+            t_line);
     exit(EXIT_FAILURE);
   }
   arr->m_size = t_size;
@@ -66,7 +65,13 @@ inline size_t rit_dyn_arr_capacity(void *t_rit_dyn_arr) {
 }
 
 /// @brief Set the capacity of an array.
-inline void rit_dyn_arr_reserve(void **t_rit_dyn_arr, size_t t_new_capacity,
+#define rit_dyn_arr_reserve(t_rit_dyn_arr, t_new_capacity, t_allocator)   \
+  rit_dyn_arr_realloc(__FILE__, __LINE__, &t_rit_dyn_arr, t_new_capacity, \
+                      t_allocator)
+
+/// @internal
+inline void rit_dyn_arr_realloc(const char *t_file, int t_line,
+                                void **t_rit_dyn_arr, size_t t_new_capacity,
                                 rit_dyn_arr_allocator *t_allocator) {
   if (t_new_capacity > rit_dyn_arr_capacity(*t_rit_dyn_arr)) {
     size_t objsize = rit_dyn_arr_get_metadata(*t_rit_dyn_arr)->m_objsize;
@@ -75,16 +80,23 @@ inline void rit_dyn_arr_reserve(void **t_rit_dyn_arr, size_t t_new_capacity,
         sizeof(rit_dyn_arr_metadata) +
             objsize * rit_dyn_arr_capacity(*t_rit_dyn_arr),
         sizeof(rit_dyn_arr_metadata) + objsize * t_new_capacity);
+    if (!arr) {
+      fprintf(stderr, "Error: reallocation failed, file: %s, line: %d\n",
+              t_file, t_line);
+      exit(EXIT_FAILURE);
+    }
     arr += 1;
     *t_rit_dyn_arr = (void *)arr;
     rit_dyn_arr_get_metadata(*t_rit_dyn_arr)->m_capacity = t_new_capacity;
   }
 }
 
-inline bool rit_dyn_arr_index_bounds_check(const char*t_file, int t_line,void *t_rit_dyn_arr,
+inline bool rit_dyn_arr_index_bounds_check(const char *t_file, int t_line,
+                                           void *t_rit_dyn_arr,
                                            size_t t_index) {
   if (t_index < rit_dyn_arr_size(t_rit_dyn_arr)) return true;
-  fprintf(stderr, "Error: array index is out of bounds, file: %s, line: %d\n", t_file, t_line);
+  fprintf(stderr, "Error: array index is out of bounds, file: %s, line: %d\n",
+          t_file, t_line);
   exit(EXIT_FAILURE);
 }
 
@@ -114,24 +126,25 @@ inline void shrink_to_fit(void *t_rit_dyn_arr) { (void)t_rit_dyn_arr; }
   t_type *t_rit_dyn_arr = (t_type *)rit_dyn_arr_alloc(          \
       __FILE__, __LINE__, sizeof(t_type), t_size, t_allocator)
 
-#define rit_dyn_arr_at(t_rit_dyn_arr, t_index)             \
+#define rit_dyn_arr_at(t_rit_dyn_arr, t_index)                                 \
   (rit_dyn_arr_index_bounds_check(__FILE__, __LINE__, t_rit_dyn_arr, t_index)) \
-      ? t_rit_dyn_arr[t_index]                             \
+      ? t_rit_dyn_arr[t_index]                                                 \
       : t_rit_dyn_arr[t_index]
 
-#define rit_dyn_arr_set(t_rit_dyn_arr, t_index, t_value)        \
-  if (rit_dyn_arr_index_bounds_check(__FILE__, __LINE__, t_rit_dyn_arr, t_index)) { \
-    t_rit_dyn_arr[t_index] = t_value;                           \
+#define rit_dyn_arr_set(t_rit_dyn_arr, t_index, t_value)                \
+  if (rit_dyn_arr_index_bounds_check(__FILE__, __LINE__, t_rit_dyn_arr, \
+                                     t_index)) {                        \
+    t_rit_dyn_arr[t_index] = t_value;                                   \
   }
 
 #define rit_dyn_arr_copy(t_rit_dyn_arr, t_rit_dyn_arr_other, t_allocator) \
   rit_dyn_arr_reserve(t_rit_dyn_arr_other,                                \
-                      rit_dyn_arr_capacity(*t_rit_dyn_arr), t_allocator); \
-  rit_dyn_arr_get_metadata(*t_rit_dyn_arr_other)->m_size =                \
-      rit_dyn_arr_size(*t_rit_dyn_arr);                                   \
-  for (size_t i = 0; i < rit_dyn_arr_size(*t_rit_dyn_arr); i++) {         \
-    rit_dyn_arr_set(*t_rit_dyn_arr_other, i,                              \
-                    rit_dyn_arr_at(*t_rit_dyn_arr, i));                   \
+                      rit_dyn_arr_capacity(t_rit_dyn_arr), t_allocator); \
+  rit_dyn_arr_get_metadata(t_rit_dyn_arr_other)->m_size =                \
+      rit_dyn_arr_size(t_rit_dyn_arr);                                   \
+  for (size_t i = 0; i < rit_dyn_arr_size(t_rit_dyn_arr); i++) {         \
+    rit_dyn_arr_set(t_rit_dyn_arr_other, i,                              \
+                    rit_dyn_arr_at(t_rit_dyn_arr, i));                   \
   }
 
 /// @brief Get the pointer to the first element of an array
@@ -147,18 +160,18 @@ inline void shrink_to_fit(void *t_rit_dyn_arr) { (void)t_rit_dyn_arr; }
   (t_rit_dyn_arr[rit_dyn_arr_size(t_rit_dyn_arr) - 1])
 
 #define rit_dyn_arr_push_back(t_rit_dyn_arr, t_value, t_allocator)      \
-  if (rit_dyn_arr_capacity(*t_rit_dyn_arr) <=                           \
-      rit_dyn_arr_size(*t_rit_dyn_arr) + 1) {                           \
+  if (rit_dyn_arr_capacity(t_rit_dyn_arr) <=                           \
+      rit_dyn_arr_size(t_rit_dyn_arr) + 1) {                           \
     rit_dyn_arr_reserve(t_rit_dyn_arr,                                  \
-                        (rit_dyn_arr_size(*t_rit_dyn_arr) + 1) * 2,     \
+                        (rit_dyn_arr_size(t_rit_dyn_arr) + 1) * 2,     \
                         t_allocator);                                   \
   }                                                                     \
-  rit_dyn_arr_get_metadata(*t_rit_dyn_arr)->m_size++;                   \
-  rit_dyn_arr_set(*t_rit_dyn_arr, rit_dyn_arr_size(*t_rit_dyn_arr) - 1, \
+  rit_dyn_arr_get_metadata(t_rit_dyn_arr)->m_size++;                   \
+  rit_dyn_arr_set(t_rit_dyn_arr, rit_dyn_arr_size(t_rit_dyn_arr) - 1, \
                   t_value);
 
 #define rit_dyn_arr_pop_back(t_rit_dyn_arr) \
-  rit_dyn_arr_get_metadata(*t_rit_dyn_arr)->m_size--
+  rit_dyn_arr_get_metadata(t_rit_dyn_arr)->m_size--
 
 #define rit_dyn_arr_resize(t_rit_dyn_arr, t_count, t_value, t_allocator) \
   for (int i = 1; i <= t_count; i++) {                                   \
@@ -168,16 +181,16 @@ inline void shrink_to_fit(void *t_rit_dyn_arr) { (void)t_rit_dyn_arr; }
 /// @brief Insert a value in the array before t_pos.
 #define rit_dyn_arr_insert(t_rit_dyn_arr, t_pos, t_value, t_allocator)         \
   rit_dyn_arr_push_back(t_rit_dyn_arr, 0, t_allocator);                        \
-  for (size_t i = rit_dyn_arr_size(*t_rit_dyn_arr) - 1; i >= t_pos; i--) {     \
-    rit_dyn_arr_set(*t_rit_dyn_arr, i, rit_dyn_arr_at(*t_rit_dyn_arr, i - 1)); \
-    rit_dyn_arr_set(*t_rit_dyn_arr, i - 1, 0);                                 \
+  for (size_t i = rit_dyn_arr_size(t_rit_dyn_arr) - 1; i >= t_pos; i--) {     \
+    rit_dyn_arr_set(t_rit_dyn_arr, i, rit_dyn_arr_at(t_rit_dyn_arr, i - 1)); \
+    rit_dyn_arr_set(t_rit_dyn_arr, i - 1, 0);                                 \
   }                                                                            \
-  rit_dyn_arr_set(*t_rit_dyn_arr, t_pos - 1, t_value)
+  rit_dyn_arr_set(t_rit_dyn_arr, t_pos - 1, t_value)
 
 /// @brief Remove the value in the array at t_pos.
 #define rit_dyn_arr_erase(t_rit_dyn_arr, t_pos)                                \
-  for (size_t i = t_pos + 1; i < rit_dyn_arr_size(*t_rit_dyn_arr); i++) {      \
-    rit_dyn_arr_set(*t_rit_dyn_arr, i - 1, rit_dyn_arr_at(*t_rit_dyn_arr, i)); \
+  for (size_t i = t_pos + 1; i < rit_dyn_arr_size(t_rit_dyn_arr); i++) {      \
+    rit_dyn_arr_set(t_rit_dyn_arr, i - 1, rit_dyn_arr_at(t_rit_dyn_arr, i)); \
   }                                                                            \
   rit_dyn_arr_pop_back(t_rit_dyn_arr)
 
