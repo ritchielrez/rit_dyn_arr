@@ -1,6 +1,7 @@
 # rit_dyn_arr
 
 ## A dynamic array implementation written in C  
+### WARNING: For the latest updates, check out this [repo](https://github.com/ritchielrez/libraries).
 
 This is an example project trying to implement **dynamic array** in C, mimicking
 `std::vector` from C++.
